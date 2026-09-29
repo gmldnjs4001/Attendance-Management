@@ -5,7 +5,7 @@
 <meta name="theme-color" content="#0b1020">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>WORKTIME v5.2 · 출퇴근 관리</title>
+<title>WORKTIME v5.3 · 출퇴근 관리</title>
 <style>
   :root{
     --bg:#f4f6fb;
@@ -74,24 +74,11 @@
   .history-item{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--line)}  .history-action{min-width:52px;text-align:center;font-size:10px;font-weight:800;padding:5px 7px;border-radius:8px;margin-right:7px}
   .history-action.in{background:#ecfdf5;color:#047857}
   .history-action.out{background:#eff6ff;color:#1d4ed8}
-  .history-delete{border:1px solid #fecaca;background:#fffafa;color:#dc2626;border-radius:10px;font-size:10px;font-weight:700;padding:7px 8px;cursor:pointer;white-space:nowrap}
-  .history-event{display:flex;align-items:center;min-width:0}
-  .history-event-main{min-width:0}
-  .history-right-wrap{display:flex;align-items:center;gap:7px}
-
-  .history-item:last-child{border-bottom:0}
-  .history-left{display:flex;align-items:center;gap:11px}
-  .dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto}
-  .dot.work{background:var(--green)}
-  .dot.off{background:#cbd5e1}
-  .history-date{font-size:13px;font-weight:700}
-  .history-sub{font-size:11px;color:var(--muted);margin-top:3px;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .history-right{text-align:right}
-  .history-time{font-size:13px;font-weight:700}
-  .empty{padding:24px 8px;text-align:center;color:var(--muted);font-size:13px}
-  .bottom{
-    position:fixed;left:50%;transform:translateX(-50%);bottom:0;width:min(520px,100%);
-    padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:rgba(244,246,251,.88);backdrop-filter:blur(18px);border-top:1px solid rgba(17,24,39,.06)
+  .history-delete{
+    display:inline-flex!important;visibility:visible!important;opacity:1!important;
+    align-items:center;justify-content:center;flex:0 0 auto;min-width:54px;height:34px;
+    border:1px solid #fecaca;background:#fff1f2;color:#dc2626;border-radius:10px;
+    font-size:11px;font-weight:800;padding:0 9px;cursor:pointer;white-space:nowrap
   }
   .nav{display:grid;grid-template-columns:repeat(4,1fr);background:white;border:1px solid var(--line);border-radius:20px;padding:5px;box-shadow:0 12px 30px rgba(16,24,40,.08)}
   .nav button{border:0;background:transparent;padding:11px 6px;border-radius:15px;color:#7b8495;font-size:11px;font-weight:700;cursor:pointer}
@@ -263,7 +250,7 @@
     </section>
 
     <section id="history" class="panel">
-      <div class="section-title"><h2>근무 기록</h2><p>출근 · 퇴근 개별 기록</p></div>
+      <div class="section-title"><h2>근무 기록</h2><p>출근 · 퇴근 개별 기록 · 삭제 가능</p></div>
       <div class="card">
         <div class="persist-note" style="margin-bottom:10px">출근과 퇴근은 각각 별도의 기록으로 표시됩니다. 오른쪽 <b>삭제</b> 버튼으로 원하는 기록만 개별 삭제할 수 있습니다.</div>
         <div class="history-list" id="historyList"></div>
@@ -345,7 +332,7 @@
       <div class="card">
         <div class="field"><label>업데이트 보호</label></div>
         <div class="persist-note">
-          <b>WORKTIME v5.2 · 전체 적용</b><br>
+          <b>WORKTIME v5.3 · 전체 적용</b><br>
           사용자 정보와 출퇴근 기록은 웹페이지 파일과 분리된 휴대폰 저장공간에 보관됩니다.
           새 버전으로 교체할 때 기존 출퇴근 데이터를 삭제하지 않습니다.
         </div>
@@ -385,19 +372,7 @@
     <button class="share-close" type="button" onclick="closeShareModal()">닫기</button>
   </div>
 </div>
-<div class="modal-backdrop" id="storeModal" onclick="if(event.target===this) closeStoreModal()">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="storeModalTitle">
-    <div class="modal-head">
-      <strong id="storeModalTitle">출근 기록</strong>
-      <button class="close-btn" onclick="closeStoreModal()" aria-label="닫기">×</button>
-    </div>
-    <div class="modal-sub">출퇴근 시간을 저장하기 전에 <b>가맹점명</b>을 입력해주세요.</div>
-    <input class="modal-input" id="storeNameInput" maxlength="80" placeholder="예: OO가맹점" autocomplete="organization">
-    <div class="modal-actions">
-      <button class="cancel-btn" onclick="closeStoreModal()">취소</button>
-      <button class="confirm-btn" id="storeConfirmBtn" onclick="confirmStore()">출근 저장</button>
-    </div>
-  </div>
+<div class="modal-backdrop" id="storeModal" aria-hidden="true" style="display:none!important"></div>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -405,12 +380,12 @@
 const KEY='worktime_records_v1';
 const PROFILE='worktime_profile_v1';
 const USERS_KEY='worktime_users_v2';
-const APP_DATA_KEY='worktime_app_data_v5_2';
-const APP_BACKUP_KEY='worktime_app_data_backup_v5_2';
-const APP_DATA_VERSION='5.2';
+const APP_DATA_KEY='worktime_app_data_v5_3';
+const APP_BACKUP_KEY='worktime_app_data_backup_v5_3';
+const APP_DATA_VERSION='5.3';
 
 // v4.0 update marker: no service worker is used; browser storage is retained.
-const WORKTIME_BUILD='2026-09-30-v5.2';
+const WORKTIME_BUILD='2026-09-30-v5.3';
 
 
 const DEFAULT_USERS=[
@@ -568,7 +543,8 @@ function render(){
   document.getElementById('heroIn').textContent=t?.in?hm(new Date(t.in)):'--:--';
   document.getElementById('heroOut').textContent=t?.out?hm(new Date(t.out)):'--:--';
   const inBtn=document.getElementById('inBtn'), outBtn=document.getElementById('outBtn');
-  inBtn.disabled=!!t?.in;
+  // 출근 버튼은 항상 눌러서 가맹점 입력창을 열 수 있도록 합니다.
+  inBtn.disabled=false;
   outBtn.disabled=!t?.in || !!t?.out;
   let status='오늘 미출근', badge='미출근', msg='출근 시간을 기록하세요';
   if(t?.in && !t?.out){status='근무 중';badge='근무 중';msg='현재 근무시간을 계산 중입니다'}
@@ -620,7 +596,7 @@ function render(){
           <div class="history-sub">${escapeHtml(e.date)}${store}</div>
         </div>
       </div>
-      <div class="history-right-wrap">
+      <div class="history-right-wrap" style="flex:0 0 auto">
         <div class="history-right">
           <div class="history-time">${time}</div>
           <div class="history-sub">${e.type==='in'?'근무 시작':'근무 종료'}</div>
@@ -634,70 +610,45 @@ function render(){
 }
 
 function openStoreModal(mode){
-  const modal=document.getElementById('storeModal');
-  const input=document.getElementById('storeNameInput');
-  const title=document.getElementById('storeModalTitle');
-  const button=document.getElementById('storeConfirmBtn');
-  if(!modal || !input || !title || !button){
-    // Mobile/browser fallback: the native dialog is reliable even if a cached DOM is incomplete.
-    const value=window.prompt('가맹점명을 입력해주세요.');
-    if(value && value.trim()){
-      if(mode==='in') finishClockIn(value.trim());
-      else finishClockOut(value.trim());
-    }
+  const t=getToday();
+  const isEdit=(mode==='in' && t && t.in);
+  const promptText = mode==='in'
+    ? (isEdit ? '오늘 출근이 이미 기록되어 있습니다.\n가맹점명을 수정하려면 입력하세요.' : '출근할 가맹점명을 입력해주세요.')
+    : '퇴근할 가맹점명을 입력해주세요.';
+  const initial=(t && t.store)?t.store:'';
+
+  // Native prompt is intentional: it is supported on mobile browsers and does not depend on cached CSS/DOM.
+  const value=window.prompt(promptText, initial);
+  if(value===null) return;
+  const store=String(value).trim();
+  if(!store){
+    window.alert('가맹점명을 입력해주세요.');
     return;
   }
-  modal.dataset.mode=mode;
-  const t=getToday();
-  input.value=(t && t.store)||'';
+
   if(mode==='in'){
-    title.textContent='출근 기록';
-    button.textContent='출근 저장';
+    if(t && t.in){
+      t.store=store;
+      t.userId=currentUserId();
+      t.userName=profile.name||t.userName||'';
+      t.dept=profile.dept||t.dept||'';
+      persistAppState(true);
+      render();
+      toast('출근 가맹점명이 수정되었습니다.');
+    }else{
+      finishClockIn(store);
+    }
   }else{
-    title.textContent='퇴근 기록';
-    button.textContent='퇴근 저장';
+    finishClockOut(store);
   }
-  modal.classList.add('show');
-  document.body.style.overflow='hidden';
-  setTimeout(()=>{
-    input.focus();
-    if(input.select) input.select();
-  },120);
 }
 
 function clockIn(){
-  if(getToday()){
-    toast('오늘 출근이 이미 기록되어 있습니다.');
-    return;
-  }
   openStoreModal('in');
 }
-
-function finishClockIn(store){
-  if(getToday()){
-    closeStoreModal();
-    toast('오늘 출근이 이미 기록되어 있습니다.');
-    return;
-  }
-  const d=now();
-  records.push({
-    date:keyOf(d),
-    userId:currentUserId(),
-    userName:profile.name||'',
-    dept:profile.dept||'',
-    in:d.toISOString(),
-    out:null,
-    store:store
-  });
-  persistAppState();
-  render();
-  closeStoreModal();
-  toast(`${profile.name||'사용자'}님 출근이 기록되었습니다.`);
-}
-
 function clockOut(){
   const t=getToday();
-  if(!t?.in){
+  if(!t || !t.in){
     toast('먼저 출근을 기록해주세요.');
     return;
   }
@@ -708,47 +659,8 @@ function clockOut(){
   openStoreModal('out');
 }
 
-function finishClockOut(store){
-  const t=getToday();
-  if(!t?.in){
-    closeStoreModal();
-    toast('먼저 출근을 기록해주세요.');
-    return;
-  }
-  if(t.out){
-    closeStoreModal();
-    toast('오늘 퇴근이 이미 기록되어 있습니다.');
-    return;
-  }
-  t.out=now().toISOString();
-  t.store=store;
-  t.userId=currentUserId();
-  t.userName=profile.name||t.userName||'';
-  t.dept=profile.dept||t.dept||'';
-  persistAppState();
-  render();
-  closeStoreModal();
-  toast('퇴근 및 가맹점이 기록되었습니다.');
-}
+function closeStoreModal(){ document.body.style.overflow=''; const modal=document.getElementById('storeModal'); if(modal) modal.classList.remove('show'); }
 
-function confirmStore(){
-  const input=document.getElementById('storeNameInput');
-  const store=String(input?.value||'').trim();
-  if(!store){
-    toast('가맹점명을 입력해주세요.');
-    input?.focus();
-    return;
-  }
-  const mode=document.getElementById('storeModal')?.dataset.mode||'in';
-  if(mode==='in') finishClockIn(store);
-  else finishClockOut(store);
-}
-
-function closeStoreModal(){
-  const modal=document.getElementById('storeModal');
-  if(modal) modal.classList.remove('show');
-  document.body.style.overflow='';
-}
 
 function escapeHtml(value){
   return String(value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
@@ -993,4 +905,31 @@ setInterval(renderClock,1000);
 renderClock();
 </script>
 </body>
-</html>
+</html>function finishClockIn(store){
+  const existing=getToday();
+  if(existing && existing.in){
+    existing.store=store;
+    existing.userId=currentUserId();
+    existing.userName=profile.name||existing.userName||'';
+    existing.dept=profile.dept||existing.dept||'';
+    persistAppState(true);
+    render();
+    toast('출근 가맹점명이 수정되었습니다.');
+    return;
+  }
+  const d=now();
+  records.push({
+    date:keyOf(d),
+    userId:currentUserId(),
+    userName:profile.name||'',
+    dept:profile.dept||'',
+    in:d.toISOString(),
+    out:null,
+    store:store
+  });
+  persistAppState(true);
+  render();
+  toast(`${profile.name||'사용자'}님 출근이 기록되었습니다.`);
+}
+
+
