@@ -5,7 +5,7 @@
 <meta name="theme-color" content="#0b1020">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>WORKTIME v5.0 · 출퇴근 관리</title>
+<title>WORKTIME v5.2 · 출퇴근 관리</title>
 <style>
   :root{
     --bg:#f4f6fb;
@@ -71,7 +71,14 @@
   .today-label{font-size:12px;color:var(--muted);margin-top:3px}
   .badge{padding:7px 10px;border-radius:999px;background:#ecfdf5;color:#047857;font-size:11px;font-weight:700}
   .history-list{display:flex;flex-direction:column}
-  .history-item{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--line)}
+  .history-item{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--line)}  .history-action{min-width:52px;text-align:center;font-size:10px;font-weight:800;padding:5px 7px;border-radius:8px;margin-right:7px}
+  .history-action.in{background:#ecfdf5;color:#047857}
+  .history-action.out{background:#eff6ff;color:#1d4ed8}
+  .history-delete{border:1px solid #fecaca;background:#fffafa;color:#dc2626;border-radius:10px;font-size:10px;font-weight:700;padding:7px 8px;cursor:pointer;white-space:nowrap}
+  .history-event{display:flex;align-items:center;min-width:0}
+  .history-event-main{min-width:0}
+  .history-right-wrap{display:flex;align-items:center;gap:7px}
+
   .history-item:last-child{border-bottom:0}
   .history-left{display:flex;align-items:center;gap:11px}
   .dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto}
@@ -127,6 +134,7 @@
   .field select{cursor:pointer}
   .primary{width:100%;border:0;border-radius:15px;padding:13px;background:#0b1020;color:white;font-weight:700;cursor:pointer}
   .danger{background:#fff1f2;color:#be123c;border:1px solid #fecdd3}
+  .share-top:active{transform:scale(.97)}
   .share-top{
     border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.08);
     color:#fff;border-radius:999px;padding:8px 10px;font-size:11px;font-weight:700;cursor:pointer;
@@ -155,6 +163,27 @@
   .modal-actions button{border:0;border-radius:15px;padding:13px;font-weight:700;cursor:pointer}
   .cancel-btn{background:#f3f4f6;color:#374151}
   .confirm-btn{background:#0b1020;color:#fff}
+  .share-modal-backdrop{
+    position:fixed;inset:0;z-index:40;background:rgba(3,7,18,.58);backdrop-filter:blur(8px);
+    display:none;align-items:flex-end;justify-content:center;
+  }
+  .share-modal-backdrop.show{display:flex}
+  .share-modal{
+    width:min(520px,100%);background:#fff;border-radius:28px 28px 0 0;
+    padding:20px 18px calc(20px + env(safe-area-inset-bottom));
+    box-shadow:0 -18px 45px rgba(0,0,0,.22)
+  }
+  .share-title{font-size:18px;font-weight:800;letter-spacing:-.03em;margin-bottom:4px}
+  .share-sub{font-size:12px;color:#6b7280;line-height:1.6;margin-bottom:14px}
+  .share-link{
+    width:100%;border:1px solid #e5e7eb;background:#f8fafc;border-radius:14px;
+    padding:12px 13px;font-size:12px;color:#334155;outline:none;margin-bottom:10px
+  }
+  .share-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .share-actions button{border:0;border-radius:15px;padding:13px;font-weight:800;cursor:pointer}
+  .share-copy{background:#0b1020;color:#fff}
+  .share-native{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe!important}
+  .share-close{width:100%;margin-top:9px;border:1px solid #e5e7eb!important;background:#f3f4f6;color:#374151}
   .toast{
     position:fixed;left:50%;transform:translate(-50%,20px);bottom:86px;z-index:10;
     background:#111827;color:#fff;padding:12px 15px;border-radius:14px;font-size:12px;opacity:0;pointer-events:none;transition:.25s
@@ -181,7 +210,7 @@
         <div id="currentUserLabel" style="font-size:10px;color:rgba(255,255,255,.5);margin-top:2px"></div>
       </div>
       <div style="display:flex;align-items:center;gap:7px">
-        <button class="share-top" onclick="shareApp()" aria-label="웹앱 공유">↗ 공유</button>
+        <button class="share-top" type="button" onclick="shareApp(event)" aria-label="웹앱 공유">↗ 공유</button>
         <div class="status-pill" id="statusPill">오늘 미출근</div>
       </div>
     </div>
@@ -234,8 +263,9 @@
     </section>
 
     <section id="history" class="panel">
-      <div class="section-title"><h2>근무 기록</h2><p>최근 30일</p></div>
+      <div class="section-title"><h2>근무 기록</h2><p>출근 · 퇴근 개별 기록</p></div>
       <div class="card">
+        <div class="persist-note" style="margin-bottom:10px">출근과 퇴근은 각각 별도의 기록으로 표시됩니다. 오른쪽 <b>삭제</b> 버튼으로 원하는 기록만 개별 삭제할 수 있습니다.</div>
         <div class="history-list" id="historyList"></div>
       </div>
     </section>
@@ -307,9 +337,15 @@
       </div>
 
       <div class="card">
+        <div class="field"><label>웹앱 공유</label></div>
+        <button class="primary" type="button" onclick="shareApp(event)">웹앱 공유하기</button>
+        <div class="persist-note">휴대폰의 공유창에서 카카오톡·문자·메일 등을 선택하거나 링크를 복사할 수 있습니다.</div>
+      </div>
+
+      <div class="card">
         <div class="field"><label>업데이트 보호</label></div>
         <div class="persist-note">
-          <b>WORKTIME v5.0 · 전체 적용</b><br>
+          <b>WORKTIME v5.2 · 전체 적용</b><br>
           사용자 정보와 출퇴근 기록은 웹페이지 파일과 분리된 휴대폰 저장공간에 보관됩니다.
           새 버전으로 교체할 때 기존 출퇴근 데이터를 삭제하지 않습니다.
         </div>
@@ -337,6 +373,18 @@
   </div>
 </div>
 
+<div class="share-modal-backdrop" id="shareModal" onclick="if(event.target===this) closeShareModal()">
+  <div class="share-modal" role="dialog" aria-modal="true" aria-labelledby="shareTitle">
+    <div class="share-title" id="shareTitle">WORKTIME 공유</div>
+    <div class="share-sub">휴대폰에서는 아래의 <b>공유하기</b>를 누르면 카카오톡, 문자 등으로 보낼 수 있습니다. 지원되지 않는 환경에서는 링크 복사를 사용하세요.</div>
+    <input class="share-link" id="shareLink" readonly>
+    <div class="share-actions">
+      <button class="share-native" type="button" onclick="nativeShare()">공유하기</button>
+      <button class="share-copy" type="button" onclick="copyShareLink()">링크 복사</button>
+    </div>
+    <button class="share-close" type="button" onclick="closeShareModal()">닫기</button>
+  </div>
+</div>
 <div class="modal-backdrop" id="storeModal" onclick="if(event.target===this) closeStoreModal()">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="storeModalTitle">
     <div class="modal-head">
@@ -357,12 +405,12 @@
 const KEY='worktime_records_v1';
 const PROFILE='worktime_profile_v1';
 const USERS_KEY='worktime_users_v2';
-const APP_DATA_KEY='worktime_app_data_v5';
-const APP_BACKUP_KEY='worktime_app_data_backup_v5';
-const APP_DATA_VERSION='5.0';
+const APP_DATA_KEY='worktime_app_data_v5_2';
+const APP_BACKUP_KEY='worktime_app_data_backup_v5_2';
+const APP_DATA_VERSION='5.2';
 
 // v4.0 update marker: no service worker is used; browser storage is retained.
-const WORKTIME_BUILD='2026-09-30-v5.0';
+const WORKTIME_BUILD='2026-09-30-v5.2';
 
 
 const DEFAULT_USERS=[
@@ -549,30 +597,38 @@ function render(){
   const list=document.getElementById('historyList');
   const recent=[...records]
     .filter(r=>String(r.userId||'001')===String(currentUserId()))
-    .sort((a,b)=>b.date.localeCompare(a.date)).slice(0,30);
-  list.innerHTML=recent.length?recent.map(r=>{
-    const dd=new Date(r.date+'T00:00:00');
-    return `<div class="history-item">
-      <div class="history-left"><span class="dot ${r.out?'work':'off'}"></span>
-        <div><div class="history-date">${dd.toLocaleDateString('ko-KR',{month:'numeric',day:'numeric',weekday:'short'})}</div>
-        <div class="history-sub">${r.out?'정상 퇴근':'퇴근 미기록'}${r.store?` · ${escapeHtml(r.store)}`:''}</div></div>
-      </div>
-      <div class="history-right"><div class="history-time">${r.in?hm(new Date(r.in)):'--:--'} → ${r.out?hm(new Date(r.out)):'--:--'}</div>
-      <div class="history-sub">${hhm(durationMin(r))}</div></div>
-    </div>`
-  }).join(''):'<div class="empty">아직 출퇴근 기록이 없습니다.</div>';
+    .sort((a,b)=>String((b.in||b.out||b.date)).localeCompare(String((a.in||a.out||a.date))))
+    .slice(0,30);
 
-  const bar=document.getElementById('weekbar');
-  const first=new Date(d.getFullYear(),d.getMonth(),1);
-  const days=new Date(d.getFullYear(),d.getMonth()+1,0).getDate();
-  const sample=[];
-  for(let day=Math.max(1,days-6);day<=days;day++){
-    const date=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(day)}`;
-    const r=records.find(x=>x.date===date && String(x.userId||'001')===String(currentUserId()));
-    sample.push({day,r,min:r?durationMin(r):0});
-  }
-  const max=Math.max(1,...sample.map(x=>x.min));
-  bar.innerHTML=sample.map(x=>`<div class="bar-col"><div class="bar-wrap"><div class="bar" style="height:${Math.max(4,Math.round(x.min/max*88))}px"></div></div>${x.day}일</div>`).join('');
+  const events=[];
+  recent.forEach(r=>{
+    if(r.in) events.push({type:'in',date:r.date,time:r.in,store:r.store||'',recordDate:r.date});
+    if(r.out) events.push({type:'out',date:r.date,time:r.out,store:r.store||'',recordDate:r.date});
+  });
+  events.sort((a,b)=>String(b.time).localeCompare(String(a.time)));
+
+  list.innerHTML=events.length ? events.map(e=>{
+    const dd=new Date(e.date+'T00:00:00');
+    const typeLabel=e.type==='in'?'출근':'퇴근';
+    const time=hm(new Date(e.time));
+    const store=e.store?` · ${escapeHtml(e.store)}`:'';
+    return `<div class="history-item">
+      <div class="history-event">
+        <span class="history-action ${e.type}">${typeLabel}</span>
+        <div class="history-event-main">
+          <div class="history-date">${dd.toLocaleDateString('ko-KR',{month:'numeric',day:'numeric',weekday:'short'})}</div>
+          <div class="history-sub">${escapeHtml(e.date)}${store}</div>
+        </div>
+      </div>
+      <div class="history-right-wrap">
+        <div class="history-right">
+          <div class="history-time">${time}</div>
+          <div class="history-sub">${e.type==='in'?'근무 시작':'근무 종료'}</div>
+        </div>
+        <button class="history-delete" type="button" onclick="deleteAttendanceEvent('${e.recordDate}','${e.type}')">삭제</button>
+      </div>
+    </div>`;
+  }).join('') : '<div class="empty">아직 출퇴근 기록이 없습니다.</div>';
 
   if(profile.name) document.title=`${profile.name} · WorkTime`;
 }
@@ -697,29 +753,89 @@ function closeStoreModal(){
 function escapeHtml(value){
   return String(value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 }
-async function shareApp(){
-  const shareData={
+function getShareUrl(){
+  try{
+    // Strip cache-busting query/hash; share the stable GitHub Pages URL.
+    const u=new URL(window.location.href);
+    u.search='';
+    u.hash='';
+    return u.href;
+  }catch(e){
+    return window.location.href;
+  }
+}
+function shareApp(event){
+  if(event) event.preventDefault();
+  const modal=document.getElementById('shareModal');
+  const link=document.getElementById('shareLink');
+  if(!modal || !link){
+    // Safe fallback for an incomplete/cached DOM.
+    nativeShare();
+    return;
+  }
+  link.value=getShareUrl();
+  modal.classList.add('show');
+  document.body.style.overflow='hidden';
+}
+function closeShareModal(){
+  const modal=document.getElementById('shareModal');
+  if(modal) modal.classList.remove('show');
+  document.body.style.overflow='';
+}
+async function nativeShare(){
+  const url=getShareUrl();
+  const data={
     title:'WORKTIME · 출퇴근 관리',
-    text:'출퇴근을 간편하게 기록하는 모바일 웹앱입니다.',
-    url:location.href
+    text:'WORKTIME 출퇴근 웹앱',
+    url:url
   };
   try{
-    if(navigator.share){
-      await navigator.share(shareData);
+    if(window.isSecureContext && navigator.share){
+      await navigator.share(data);
+      closeShareModal();
       return;
     }
-    await navigator.clipboard.writeText(location.href);
-    toast('웹앱 주소가 복사되었습니다.');
   }catch(err){
+    // User cancelled or browser rejected the Web Share API; continue to copy fallback.
     if(err && err.name==='AbortError') return;
+  }
+  copyShareLink();
+}
+async function copyShareLink(){
+  const url=getShareUrl();
+  let copied=false;
+  try{
+    if(navigator.clipboard && window.isSecureContext){
+      await navigator.clipboard.writeText(url);
+      copied=true;
+    }
+  }catch(e){}
+  if(!copied){
     try{
       const ta=document.createElement('textarea');
-      ta.value=location.href; document.body.appendChild(ta); ta.select();
-      document.execCommand('copy'); ta.remove();
-      toast('웹앱 주소가 복사되었습니다.');
-    }catch(e){
-      toast('공유 기능을 사용할 수 없습니다.');
+      ta.value=url;
+      ta.setAttribute('readonly','');
+      ta.style.position='fixed';
+      ta.style.top='-1000px';
+      ta.style.opacity='0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      ta.setSelectionRange(0,ta.value.length);
+      copied=document.execCommand('copy');
+      ta.remove();
+    }catch(e){}
+  }
+  if(copied){
+    closeShareModal();
+    toast('웹앱 주소가 복사되었습니다. 카카오톡이나 문자에 붙여넣어 주세요.');
+  }else{
+    const link=document.getElementById('shareLink');
+    if(link){
+      link.focus();
+      link.select();
     }
+    toast('주소를 길게 눌러 복사해 주세요.');
   }
 }
 function renderUserGrid(){
@@ -834,15 +950,35 @@ function resetData(){
     records=[]; persistAppState(true); render(); toast('출퇴근 기록만 초기화되었습니다. 사용자 정보는 유지됩니다.');
   }
 }
+function deleteAttendanceEvent(date,type){
+  const idx=records.findIndex(r=>String(r.date)===String(date) && String(r.userId||'001')===String(currentUserId()));
+  if(idx<0){toast('기록을 찾을 수 없습니다.');return;}
+  const label=type==='in'?'출근':'퇴근';
+  if(!confirm(`${date} ${label} 기록을 삭제할까요?`)) return;
+  const rec=records[idx];
+  if(type==='in') rec.in=null;
+  else rec.out=null;
+  if(!rec.in && !rec.out) records.splice(idx,1);
+  persistAppState(true);
+  render();
+  toast(`${label} 기록을 삭제했습니다.`);
+}
+
 function exportCSV(){
-  const rows=[['사용자ID','사용자이름','부서','날짜','출근','퇴근','가맹점','근무시간']];
+  const rows=[['사용자ID','사용자이름','부서','날짜','구분','시간','가맹점','근무시간']];
   [...records]
     .filter(r=>String(r.userId||'001')===String(currentUserId()))
     .sort((a,b)=>a.date.localeCompare(b.date))
-    .forEach(r=>rows.push([r.userId||'',r.userName||'',r.dept||'',r.date,r.in?hm(new Date(r.in)):'',r.out?hm(new Date(r.out)):'',r.store||'',hhm(durationMin(r))]));
+    .forEach(r=>{
+      if(r.in) rows.push([r.userId||'',r.userName||'',r.dept||'',r.date,'출근',hm(new Date(r.in)),r.store||'','']);
+      if(r.out) rows.push([r.userId||'',r.userName||'',r.dept||'',r.date,'퇴근',hm(new Date(r.out)),r.store||'',hhm(durationMin(r))]);
+    });
   const csv='\uFEFF'+rows.map(x=>x.map(v=>`"${String(v).replaceAll('"','""')}"`).join(',')).join('\n');
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`근무기록_${keyOf(now())}.csv`;a.click();
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`근무기록_${currentUserId()}_${keyOf(now())}.csv`;
+  a.click();
   setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
 document.querySelectorAll('.nav button').forEach(btn=>{
