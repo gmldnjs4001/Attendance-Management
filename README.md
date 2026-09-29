@@ -5,7 +5,7 @@
 <meta name="theme-color" content="#0b1020">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>WorkTime · 출퇴근 관리</title>
+<title>WORKTIME v5.0 · 출퇴근 관리</title>
 <style>
   :root{
     --bg:#f4f6fb;
@@ -106,6 +106,13 @@
     background:#0b1020;color:#fff;font-size:11px;display:none;align-items:center;justify-content:center
   }
   .user-card.active .check{display:flex}
+  .user-selected{
+    border:1px solid #dbeafe;background:linear-gradient(145deg,#eff6ff,#f8fbff);
+    border-radius:18px;padding:14px;margin:4px 0 12px
+  }
+  .selected-label{font-size:10px;color:#64748b;font-weight:700;margin-bottom:5px}
+  .selected-main{font-size:19px;font-weight:800;letter-spacing:-.03em}
+  .selected-sub{font-size:12px;color:#64748b;margin-top:4px}
   .persist-note{font-size:11px;color:#64748b;line-height:1.6;background:#f8fafc;border:1px solid var(--line);border-radius:14px;padding:11px 12px;margin-top:10px}
   .backup-row{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:9px}
   .secondary-btn{
@@ -170,7 +177,7 @@
   <header class="hero">
     <div class="top">
       <div>
-        <div class="brand">WORKTIME</div>
+        <div class="brand">WORKTIME <span style="font-size:9px;opacity:.5">v4.0</span></div>
         <div id="currentUserLabel" style="font-size:10px;color:rgba(255,255,255,.5);margin-top:2px"></div>
       </div>
       <div style="display:flex;align-items:center;gap:7px">
@@ -191,12 +198,12 @@
       <div class="section-title"><h2>오늘의 근무</h2><p id="todayMsg">출근 시간을 기록하세요</p></div>
       <div class="card">
         <div class="attendance">
-          <button class="action in" id="inBtn" onclick="clockIn()">
+          <button class="action in" id="inBtn" type="button" onclick="clockIn()">
             <span class="label">출근</span>
             <strong>출근하기</strong>
             <span class="sub">현재 시간을 기록합니다</span>
           </button>
-          <button class="action out" id="outBtn" onclick="clockOut()" disabled>
+          <button class="action out" id="outBtn" type="button" onclick="clockOut()" disabled>
             <span class="label">퇴근</span>
             <strong>퇴근하기</strong>
             <span class="sub">근무 종료 시간을 기록합니다</span>
@@ -249,75 +256,73 @@
     </section>
 
     <section id="settings" class="panel">
-      <div class="section-title"><h2>설정</h2><p>사용자 관리</p></div>
+      <div class="section-title"><h2>설정</h2><p>사용자 선택</p></div>
 
       <div class="card">
-        <div class="field"><label>사용자 선택 · 사용자 ID를 눌러 선택하세요</label></div>
-        <div class="user-grid" id="userGrid">
-          <button class="user-card" type="button" data-user-id="001" onclick="selectUser('001')">
-            <span class="check">✓</span><span class="uid">USER 001</span>
-            <span class="uname">최경원</span><span class="udept">필드팀</span>
-          </button>
-          <button class="user-card" type="button" data-user-id="002" onclick="selectUser('002')">
-            <span class="check">✓</span><span class="uid">USER 002</span>
-            <span class="uname">최우주</span><span class="udept">필드팀</span>
-          </button>
-          <button class="user-card" type="button" data-user-id="003" onclick="selectUser('003')">
-            <span class="check">✓</span><span class="uid">USER 003</span>
-            <span class="uname">최주노</span><span class="udept">필드팀</span>
-          </button>
-          <button class="user-card" type="button" data-user-id="004" onclick="selectUser('004')">
-            <span class="check">✓</span><span class="uid">USER 004</span>
-            <span class="uname">조희원</span><span class="udept">필드팀</span>
-          </button>
-          <button class="user-card" type="button" data-user-id="005" onclick="selectUser('005')">
-            <span class="check">✓</span><span class="uid">USER 005</span>
-            <span class="uname">전용식</span><span class="udept">필드팀</span>
-          </button>
-          <button class="user-card" type="button" data-user-id="006" onclick="selectUser('006')">
-            <span class="check">✓</span><span class="uid">USER 006</span>
-            <span class="uname">양준용</span><span class="udept">필드팀</span>
-          </button>
+        <div class="field"><label>사용자 ID</label>
+          <select id="userId" onchange="syncUserFrom('id',this.value)" aria-label="사용자 ID 선택">
+            <option value="001">001</option>
+            <option value="002">002</option>
+            <option value="003">003</option>
+            <option value="004">004</option>
+            <option value="005">005</option>
+            <option value="006">006</option>
+          </select>
         </div>
 
-        <div class="form-row">
-          <div class="field">
-            <label>사용자 ID</label>
-            <select id="userId" onchange="selectUser(this.value)">
-              <option value="001">001</option>
-              <option value="002">002</option>
-              <option value="003">003</option>
-              <option value="004">004</option>
-              <option value="005">005</option>
-              <option value="006">006</option>
-            </select>
-          </div>
-          <div class="field"><label>사용자 이름</label><input id="userName" readonly></div>
+        <div class="field"><label>사용자 이름</label>
+          <select id="userName" onchange="syncUserFrom('name',this.value)" aria-label="사용자 이름 선택">
+            <option value="001">최경원</option>
+            <option value="002">최우주</option>
+            <option value="003">최주노</option>
+            <option value="004">조희원</option>
+            <option value="005">전용식</option>
+            <option value="006">양준용</option>
+          </select>
         </div>
-        <div class="field"><label>소속 / 부서</label><input id="userDept" readonly></div>
+
+        <div class="field"><label>소속 / 부서</label>
+          <select id="userDept" onchange="syncUserFrom('dept',this.value)" aria-label="소속 부서 선택">
+            <option value="001">필드팀 · 최경원</option>
+            <option value="002">필드팀 · 최우주</option>
+            <option value="003">필드팀 · 최주노</option>
+            <option value="004">필드팀 · 조희원</option>
+            <option value="005">필드팀 · 전용식</option>
+            <option value="006">필드팀 · 양준용</option>
+          </select>
+        </div>
+
+        <div class="user-selected" id="selectedUserBox">
+          <div class="selected-label">현재 선택 사용자</div>
+          <div class="selected-main" id="selectedUserMain">001 · 최경원</div>
+          <div class="selected-sub" id="selectedUserSub">필드팀</div>
+        </div>
 
         <button class="primary" onclick="saveProfile()">현재 사용자 저장</button>
 
         <div class="persist-note">
-          <b>업데이트 보호</b><br>
-          사용자 001~006 정보와 출퇴근 기록은 앱 파일과 분리된 브라우저 저장공간에 저장됩니다.
-          새 버전으로 파일을 교체해도 기존 저장 데이터를 삭제하거나 초기화하지 않습니다.
+          <b>사용자 선택 방법</b><br>
+          사용자 ID / 사용자 이름 / 소속·부서 중 아무 칸이나 누른 뒤 001~006 중 한 명을 선택하면 세 항목이 함께 바뀝니다.
         </div>
       </div>
 
       <div class="card">
-        <div class="field"><label>데이터 백업 / 복원</label></div>
+        <div class="field"><label>업데이트 보호</label></div>
+        <div class="persist-note">
+          <b>WORKTIME v5.0 · 전체 적용</b><br>
+          사용자 정보와 출퇴근 기록은 웹페이지 파일과 분리된 휴대폰 저장공간에 보관됩니다.
+          새 버전으로 교체할 때 기존 출퇴근 데이터를 삭제하지 않습니다.
+        </div>
         <div class="backup-row">
           <button class="secondary-btn" onclick="backupData()">백업 저장</button>
           <button class="secondary-btn" onclick="restoreData()">백업 불러오기</button>
         </div>
-        <div class="persist-note">휴대폰 변경 또는 사이트 데이터 삭제에 대비해 백업 파일을 따로 보관할 수 있습니다.</div>
       </div>
 
       <div class="card">
         <div class="field"><label>기록 초기화</label></div>
         <button class="primary danger" onclick="resetData()">출퇴근 기록만 초기화</button>
-        <div class="persist-note">사용자 001~006 정보는 초기화되지 않습니다.</div>
+        <div class="persist-note">사용자 001~006 정보는 삭제하지 않습니다.</div>
       </div>
     </section>
   </main>
@@ -335,14 +340,14 @@
 <div class="modal-backdrop" id="storeModal" onclick="if(event.target===this) closeStoreModal()">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="storeModalTitle">
     <div class="modal-head">
-      <strong id="storeModalTitle">퇴근 기록</strong>
+      <strong id="storeModalTitle">출근 기록</strong>
       <button class="close-btn" onclick="closeStoreModal()" aria-label="닫기">×</button>
     </div>
-    <div class="modal-sub">퇴근 시간을 저장하기 전에 오늘 방문한 <b>가맹점명</b>을 입력해주세요.</div>
+    <div class="modal-sub">출퇴근 시간을 저장하기 전에 <b>가맹점명</b>을 입력해주세요.</div>
     <input class="modal-input" id="storeNameInput" maxlength="80" placeholder="예: OO가맹점" autocomplete="organization">
     <div class="modal-actions">
       <button class="cancel-btn" onclick="closeStoreModal()">취소</button>
-      <button class="confirm-btn" onclick="confirmClockOut()">퇴근 저장</button>
+      <button class="confirm-btn" id="storeConfirmBtn" onclick="confirmStore()">출근 저장</button>
     </div>
   </div>
 </div>
@@ -352,9 +357,13 @@
 const KEY='worktime_records_v1';
 const PROFILE='worktime_profile_v1';
 const USERS_KEY='worktime_users_v2';
-const APP_DATA_KEY='worktime_app_data_v3';
-const APP_BACKUP_KEY='worktime_app_data_backup_v3';
-const APP_DATA_VERSION='3.0';
+const APP_DATA_KEY='worktime_app_data_v5';
+const APP_BACKUP_KEY='worktime_app_data_backup_v5';
+const APP_DATA_VERSION='5.0';
+
+// v4.0 update marker: no service worker is used; browser storage is retained.
+const WORKTIME_BUILD='2026-09-30-v5.0';
+
 
 const DEFAULT_USERS=[
   {id:'001',name:'최경원',dept:'필드팀'},
@@ -559,7 +568,7 @@ function render(){
   const sample=[];
   for(let day=Math.max(1,days-6);day<=days;day++){
     const date=`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(day)}`;
-    const r=records.find(x=>x.date===date);
+    const r=records.find(x=>x.date===date && String(x.userId||'001')===String(currentUserId()));
     sample.push({day,r,min:r?durationMin(r):0});
   }
   const max=Math.max(1,...sample.map(x=>x.min));
@@ -568,8 +577,52 @@ function render(){
   if(profile.name) document.title=`${profile.name} · WorkTime`;
 }
 
+function openStoreModal(mode){
+  const modal=document.getElementById('storeModal');
+  const input=document.getElementById('storeNameInput');
+  const title=document.getElementById('storeModalTitle');
+  const button=document.getElementById('storeConfirmBtn');
+  if(!modal || !input || !title || !button){
+    // Mobile/browser fallback: the native dialog is reliable even if a cached DOM is incomplete.
+    const value=window.prompt('가맹점명을 입력해주세요.');
+    if(value && value.trim()){
+      if(mode==='in') finishClockIn(value.trim());
+      else finishClockOut(value.trim());
+    }
+    return;
+  }
+  modal.dataset.mode=mode;
+  const t=getToday();
+  input.value=(t && t.store)||'';
+  if(mode==='in'){
+    title.textContent='출근 기록';
+    button.textContent='출근 저장';
+  }else{
+    title.textContent='퇴근 기록';
+    button.textContent='퇴근 저장';
+  }
+  modal.classList.add('show');
+  document.body.style.overflow='hidden';
+  setTimeout(()=>{
+    input.focus();
+    if(input.select) input.select();
+  },120);
+}
+
 function clockIn(){
-  if(getToday()) return;
+  if(getToday()){
+    toast('오늘 출근이 이미 기록되어 있습니다.');
+    return;
+  }
+  openStoreModal('in');
+}
+
+function finishClockIn(store){
+  if(getToday()){
+    closeStoreModal();
+    toast('오늘 출근이 이미 기록되어 있습니다.');
+    return;
+  }
   const d=now();
   records.push({
     date:keyOf(d),
@@ -578,27 +631,37 @@ function clockIn(){
     dept:profile.dept||'',
     in:d.toISOString(),
     out:null,
-    store:''
+    store:store
   });
-  persistAppState(); render(); toast(`${profile.name||'사용자'}님 출근이 기록되었습니다.`);
+  persistAppState();
+  render();
+  closeStoreModal();
+  toast(`${profile.name||'사용자'}님 출근이 기록되었습니다.`);
 }
+
 function clockOut(){
   const t=getToday();
-  if(!t?.in || t.out) return;
-  document.getElementById('storeNameInput').value=t.store||'';
-  document.getElementById('storeModal').classList.add('show');
-  setTimeout(()=>document.getElementById('storeNameInput').focus(),80);
+  if(!t?.in){
+    toast('먼저 출근을 기록해주세요.');
+    return;
+  }
+  if(t.out){
+    toast('오늘 퇴근이 이미 기록되어 있습니다.');
+    return;
+  }
+  openStoreModal('out');
 }
-function closeStoreModal(){
-  document.getElementById('storeModal').classList.remove('show');
-}
-function confirmClockOut(){
+
+function finishClockOut(store){
   const t=getToday();
-  if(!t?.in || t.out) return;
-  const store=document.getElementById('storeNameInput').value.trim();
-  if(!store){
-    toast('가맹점명을 입력해주세요.');
-    document.getElementById('storeNameInput').focus();
+  if(!t?.in){
+    closeStoreModal();
+    toast('먼저 출근을 기록해주세요.');
+    return;
+  }
+  if(t.out){
+    closeStoreModal();
+    toast('오늘 퇴근이 이미 기록되어 있습니다.');
     return;
   }
   t.out=now().toISOString();
@@ -606,8 +669,31 @@ function confirmClockOut(){
   t.userId=currentUserId();
   t.userName=profile.name||t.userName||'';
   t.dept=profile.dept||t.dept||'';
-  persistAppState(); render(); closeStoreModal(); toast('퇴근 및 가맹점이 기록되었습니다.');
+  persistAppState();
+  render();
+  closeStoreModal();
+  toast('퇴근 및 가맹점이 기록되었습니다.');
 }
+
+function confirmStore(){
+  const input=document.getElementById('storeNameInput');
+  const store=String(input?.value||'').trim();
+  if(!store){
+    toast('가맹점명을 입력해주세요.');
+    input?.focus();
+    return;
+  }
+  const mode=document.getElementById('storeModal')?.dataset.mode||'in';
+  if(mode==='in') finishClockIn(store);
+  else finishClockOut(store);
+}
+
+function closeStoreModal(){
+  const modal=document.getElementById('storeModal');
+  if(modal) modal.classList.remove('show');
+  document.body.style.overflow='';
+}
+
 function escapeHtml(value){
   return String(value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 }
@@ -641,25 +727,41 @@ function renderUserGrid(){
     card.classList.toggle('active',String(card.dataset.userId)===String(profile.id));
   });
 }
+function syncUserFrom(source,value){
+  let id=String(value||'001');
+  if(source==='name' || source==='dept'){
+    id=String(value||'001'); // each select uses the same user ID as its option value
+  }
+  selectUser(id,true);
+}
 function selectUser(id, notify=true){
-  const u=users.find(x=>String(x.id)===String(id)) || DEFAULT_USERS.find(x=>x.id===String(id));
+  const u=users.find(x=>String(x.id)===String(id)) ||
+          DEFAULT_USERS.find(x=>String(x.id)===String(id));
   if(!u) return;
+
   profile={id:u.id,name:u.name,dept:u.dept};
+
+  // Update all three visible fields immediately.
   const idEl=document.getElementById('userId');
   const nameEl=document.getElementById('userName');
   const deptEl=document.getElementById('userDept');
-  // 화면을 먼저 갱신하여 저장소 접근 실패와 무관하게 이름/부서가 바로 표시됩니다.
   if(idEl) idEl.value=u.id;
-  if(nameEl) nameEl.value=u.name;
-  if(deptEl) deptEl.value=u.dept;
+  if(nameEl) nameEl.value=u.id;
+  if(deptEl) deptEl.value=u.id;
+
+  const main=document.getElementById('selectedUserMain');
+  const sub=document.getElementById('selectedUserSub');
+  if(main) main.textContent=`${u.id} · ${u.name}`;
+  if(sub) sub.textContent=u.dept;
+
   renderUserGrid();
   render();
   persistAppState(true);
-  if(notify) toast(`${u.name}님이 선택되었습니다.`);
+
+  if(notify) toast(`${u.id} · ${u.name} · ${u.dept}`);
 }
 function saveProfile(){
-  const id=document.getElementById('userId')?.value||'001';
-  selectUser(id,false);
+  selectUser(document.getElementById('userId')?.value||'001',false);
   toast('사용자 정보가 저장되었습니다.');
 }
 function backupData(){
@@ -708,14 +810,21 @@ function restoreData(){
 }
 function loadProfileUI(showToast=true){
   users=mergeUsers(users);
-  let u=users.find(x=>String(x.id)===String(profile.id||'001'))||users[0];
+  const u=users.find(x=>String(x.id)===String(profile.id||'001'))||users[0];
   profile={id:u.id,name:u.name,dept:u.dept};
+
   const idEl=document.getElementById('userId');
   const nameEl=document.getElementById('userName');
   const deptEl=document.getElementById('userDept');
   if(idEl) idEl.value=u.id;
-  if(nameEl) nameEl.value=u.name;
-  if(deptEl) deptEl.value=u.dept;
+  if(nameEl) nameEl.value=u.id;
+  if(deptEl) deptEl.value=u.id;
+
+  const main=document.getElementById('selectedUserMain');
+  const sub=document.getElementById('selectedUserSub');
+  if(main) main.textContent=`${u.id} · ${u.name}`;
+  if(sub) sub.textContent=u.dept;
+
   renderUserGrid();
   persistAppState(false);
   if(showToast) toast(`${u.name}님이 현재 사용자입니다.`);
